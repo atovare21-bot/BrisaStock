@@ -56,6 +56,33 @@ Las pruebas usan una base H2 en memoria (con una guardia que aborta si no es H2)
 - La aplicación no trae un administrador inicial: el primer `ADMIN` debe existir ya en la tabla `usuarios` (los usuarios actuales no se modifican).
 - No hay (todavía) pantalla para desactivar usuarios ni cambiar contraseñas.
 
+## Accesibilidad y búsqueda rápida
+Pensadas para que cualquier persona pueda usar la aplicación sin enredarse. No cambian datos ni permisos: son solo de presentación y viven en el navegador.
+
+- **Botón "Accesibilidad"** (barra superior y pantalla de inicio de sesión):
+  - Tamaño de la letra: Normal, Grande, Muy grande o Máximo. Agranda también botones y campos; con letra amplia las tablas pasan a tarjetas para no tener que desplazarse hacia los lados.
+  - Alto contraste: texto más oscuro y bordes más marcados.
+  - Botones y campos más grandes: más fáciles de tocar.
+  - Reducir animaciones.
+- Las preferencias se guardan en `localStorage` de ese dispositivo (clave `brisastock.accesibilidad`). **Nunca** se guardan allí credenciales ni datos del negocio.
+- **Búsqueda rápida**: botón "Buscar", `Ctrl + K` o la tecla `/`. Un solo cuadro para ir a una sección o encontrar un producto por nombre, marca, categoría o ID. Ignora tildes y mayúsculas ("atun" encuentra "Atún"). Con las flechas se recorren los resultados y con Enter se abre el elegido. Solo ofrece las secciones que el rol puede ver.
+- Los formularios marcan los campos con error con `aria-invalid` y enlazan el mensaje, para lectores de pantalla.
+
+Archivos: `static/js/accesibilidad.js`, `static/js/busqueda.js` y el bloque "Accesibilidad y búsqueda rápida" de `static/css/app.css`.
+
+## Trabajo en equipo con Git
+```powershell
+git clone <URL del repositorio>
+cd <carpeta del repositorio>
+git pull                      # antes de empezar: traer lo último
+# ... hacer cambios ...
+.\mvnw.cmd test               # las pruebas deben pasar
+git add .
+git commit -m "Describe el cambio en una frase"
+git push
+```
+No suba contraseñas, respaldos `.sql` ni la carpeta `target/`.
+
 ## Swagger / OpenAPI
 `/swagger-ui.html` y `/v3/api-docs` **requieren iniciar sesión como ADMIN** (el navegador pedirá usuario y contraseña). Para apagarlos: `SWAGGER_ENABLED=false`.
 
