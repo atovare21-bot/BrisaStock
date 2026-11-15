@@ -55,6 +55,23 @@ class InterfazWebYSesionApiTest extends PruebaApiBase {
         mvc.perform(get("/api/ventas")).andExpect(status().isUnauthorized());
     }
 
+    /** Accesibilidad y búsqueda rápida: sus archivos se sirven sin sesión (no contienen datos). */
+    @Test
+    void accesibilidadYBusquedaRapida_estanEnLaInterfaz_ySonPublicas() throws Exception {
+        mvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"btn-accesibilidad\"")))
+                .andExpect(content().string(containsString("id=\"btn-accesibilidad-login\"")))
+                .andExpect(content().string(containsString("id=\"btn-buscar\"")));
+        mvc.perform(get("/js/accesibilidad.js"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("localStorage")));
+        mvc.perform(get("/js/busqueda.js")).andExpect(status().isOk());
+        mvc.perform(get("/css/app.css"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("data-contraste")));
+    }
+
     @Test
     void producto_publicaStockBajoCalculadoPorElServidor() throws Exception {
         Producto igual = crearProducto("Igual", 5, 1000.0, false);
