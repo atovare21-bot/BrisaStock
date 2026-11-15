@@ -25,7 +25,7 @@ export async function render(raiz, yo) {
     h('option', { value: 'agotado' }, 'Agotados'),
     h('option', { value: 'vencido' }, 'Vencidos'),
     h('option', { value: 'inactivo' }, 'Desactivados'));
-  const porId = h('input', { type: 'number', min: 1, step: 1, placeholder: 'ID', 'aria-label': 'ID del producto', style: 'width:90px' });
+  const porId = h('input', { type: 'number', min: 1, step: 1, placeholder: 'ID', 'aria-label': 'ID del producto', style: 'width:5.6rem' });
   const btnId = h('button', { class: 'btn', type: 'button' }, 'Buscar por ID');
 
   const barra = h('div', { class: 'herramientas' },
@@ -122,7 +122,8 @@ export async function render(raiz, yo) {
   await recargar();
 }
 
-async function verDetalle(id, admin) {
+/** Ficha de un producto. También la usa la búsqueda rápida (busqueda.js). */
+export async function verDetalle(id, admin) {
   let p;
   try { p = await api.get(`/api/productos/${id}`); } catch (e) { aviso(e.message, 'error'); return; }
   const fila = (t, v) => [h('dt', {}, t), h('dd', {}, v ?? '—')];

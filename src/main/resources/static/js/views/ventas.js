@@ -8,7 +8,7 @@
 // siempre lo que responde la API y no registra nada si la solicitud falla.
 import * as api from '../api.js';
 import {
-  h, vaciar, tabla, dinero, fecha, entero, dialogo, confirmar, aviso, mensaje, ocupado, panelError, vacio,
+  h, vaciar, tabla, dinero, fecha, entero, dialogo, confirmar, aviso, mensaje, ocupado, panelError, vacio, normalizar,
 } from '../ui.js';
 
 export async function render(raiz, yo) {
@@ -122,10 +122,10 @@ async function nuevaVenta(raiz) {
   };
 
   function pintarLista() {
-    const q = buscar.value.trim().toLowerCase();
+    const q = normalizar(buscar.value.trim());   // sin tildes ni mayúsculas: "cafe" encuentra "Café"
     const visibles = productos
       .filter((p) => p.activo !== false)
-      .filter((p) => !q || [p.nombre, p.marca, p.categoria].some((t) => t && t.toLowerCase().includes(q)))
+      .filter((p) => !q || [p.nombre, p.marca, p.categoria].some((t) => t && normalizar(t).includes(q)))
       .slice(0, 60);
     vaciar(elegir);
     if (!visibles.length) {

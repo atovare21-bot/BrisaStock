@@ -24,6 +24,9 @@ function agregar(el, hijos) {
 
 export const vaciar = (el) => { el.replaceChildren(); return el; };
 
+/** Texto en minúsculas y sin tildes, para que "cafe" encuentre "Café". */
+export const normalizar = (texto) => String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
 // ---------- Formato ----------
 const moneda = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 const monedaDec = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -47,6 +50,8 @@ const ICONOS = {
   usuarios: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   cerrar: '<path d="M6 6l12 12M18 6 6 18"/>',
+  buscar: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>',
+  accesibilidad: '<circle cx="12" cy="4.5" r="1.6"/><path d="M4.5 8.5 12 10l7.5-1.5M12 10v5.5M12 15.5 8.5 21M12 15.5l3.5 5.5"/>',
 };
 export function icono(nombre) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -70,12 +75,15 @@ export function aviso(texto, tipo = 'info', ms = 5000) {
 }
 
 // ---------- Diálogos ----------
+let contadorDialogos = 0;
 export function dialogo({ titulo, cuerpo, acciones = [], ancho = false, alCerrar }) {
-  const dlg = h('dialog', { class: ancho ? 'ancho' : '', 'aria-labelledby': 'dlg-titulo' });
+  // Id único: puede haber un diálogo abierto encima de otro (p. ej. una confirmación)
+  const idTitulo = `dlg-titulo-${++contadorDialogos}`;
+  const dlg = h('dialog', { class: ancho ? 'ancho' : '', 'aria-labelledby': idTitulo });
   const cerrar = () => { if (dlg.open) dlg.close(); };
   dlg.append(
     h('div', { class: 'dialogo__cabecera' },
-      h('h2', { id: 'dlg-titulo' }, titulo),
+      h('h2', { id: idTitulo }, titulo),
       h('button', { class: 'btn btn--icono btn--suave', type: 'button', 'aria-label': 'Cerrar', onclick: cerrar }, icono('cerrar'))),
     h('div', { class: 'dialogo__cuerpo' }, cuerpo),
     acciones.length ? h('div', { class: 'dialogo__pie' }, acciones) : null,
@@ -139,10 +147,21 @@ export function mostrarErrorCampo(contenedor, nombre, mensaje) {
   const e = c.querySelector('.error');
   e.textContent = mensaje;
   e.hidden = false;
+  // Los lectores de pantalla anuncian el campo como inválido y leen el motivo
+  const control = c.querySelector('input, select, textarea');
+  if (control) {
+    if (!e.id) e.id = `${control.id || 'campo'}-error`;
+    control.setAttribute('aria-invalid', 'true');
+    control.setAttribute('aria-describedby', e.id);
+  }
   return true;
 }
 
 export function limpiarErrores(contenedor) {
+  contenedor.querySelectorAll('[aria-invalid="true"]').forEach((el) => {
+    el.removeAttribute('aria-invalid');
+    el.removeAttribute('aria-describedby');
+  });
   contenedor.querySelectorAll('.campo.invalido').forEach((c) => c.classList.remove('invalido'));
   contenedor.querySelectorAll('.campo .error').forEach((e) => { e.hidden = true; e.textContent = ''; });
 }

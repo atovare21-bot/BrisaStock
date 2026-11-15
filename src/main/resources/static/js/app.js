@@ -2,6 +2,8 @@
 // Ocultar opciones por rol es solo comodidad: la autorización real la hace el backend.
 import * as api from './api.js';
 import { h, icono, vaciar, panelError, aviso } from './ui.js';
+import { abrirPanelAccesibilidad } from './accesibilidad.js';   // al importarse aplica las preferencias guardadas
+import { abrirBusqueda } from './busqueda.js';
 
 const RUTAS = [
   { id: 'panel', titulo: 'Panel', icono: 'panel', roles: ['ADMIN', 'USER'], cargar: () => import('./views/panel.js') },
@@ -78,6 +80,31 @@ function cerrarMenuMovil() {
   $('btn-menu').setAttribute('aria-expanded', 'false');
 }
 
+// ---------- Búsqueda rápida y accesibilidad ----------
+function busquedaRapida() {
+  if (!api.sesionActual() || document.querySelector('dialog[open]')) return;
+  const rutas = rutasPermitidas();
+  const tiene = (id) => rutas.some((r) => r.id === id);
+  abrirBusqueda({
+    rutas,
+    acciones: [
+      tiene('ventas') ? { titulo: 'Registrar una venta', detalle: 'Elegir productos y cobrar', claves: 'vender venta cobrar caja', icono: 'ventas', ejecutar: () => { location.hash = '#/ventas'; } } : null,
+      tiene('inventario') ? { titulo: 'Registrar entrada de mercancía', detalle: 'Sumar al inventario lo que llegó', claves: 'llegada pedido proveedor inventario stock', icono: 'inventario', ejecutar: () => { location.hash = '#/inventario'; } } : null,
+      { titulo: 'Opciones de accesibilidad', detalle: 'Tamaño de letra y alto contraste', claves: 'letra grande zoom contraste accesibilidad', icono: 'accesibilidad', ejecutar: abrirPanelAccesibilidad },
+    ].filter(Boolean),
+  });
+}
+
+function atajosDeTeclado(ev) {
+  const escribiendo = ev.target instanceof Element && ev.target.closest('input, textarea, select, [contenteditable]');
+  const ctrlK = (ev.ctrlKey || ev.metaKey) && !ev.altKey && ev.key.toLowerCase() === 'k';
+  const barra = ev.key === '/' && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !escribiendo;
+  if (!ctrlK && !barra) return;
+  if (!api.sesionActual()) return;
+  ev.preventDefault();          // Ctrl+K no debe abrir la barra de búsqueda del navegador
+  busquedaRapida();
+}
+
 function entrarALaApp(usuario) {
   $('login').hidden = true;
   $('app').hidden = false;
@@ -90,6 +117,7 @@ function entrarALaApp(usuario) {
 
 function salir(mensaje) {
   api.cerrarSesion();
+  document.querySelectorAll('dialog[open]').forEach((d) => d.close());   // nada de la sesión anterior queda a la vista
   numeroRender++;
   location.hash = '';
   vaciar($('vista'));
@@ -100,6 +128,13 @@ function iniciar() {
   $('btn-menu').append(icono('menu'));
   $('btn-menu').addEventListener('click', () => (document.body.classList.contains('menu-abierto') ? cerrarMenuMovil() : abrirMenuMovil()));
   $('velo').addEventListener('click', cerrarMenuMovil);
+  $('btn-buscar').prepend(icono('buscar'));
+  $('btn-buscar').addEventListener('click', busquedaRapida);
+  $('btn-accesibilidad').prepend(icono('accesibilidad'));
+  $('btn-accesibilidad').addEventListener('click', abrirPanelAccesibilidad);
+  $('btn-accesibilidad-login').prepend(icono('accesibilidad'));
+  $('btn-accesibilidad-login').addEventListener('click', abrirPanelAccesibilidad);
+  document.addEventListener('keydown', atajosDeTeclado);
   $('btn-salir').addEventListener('click', () => { salir(); aviso('Cerraste sesión.', 'info', 3000); });
   window.addEventListener('hashchange', () => { if (api.sesionActual()) mostrarVista(); });
   api.alSesionInvalida(() => salir('Tu sesión ya no es válida. Inicia sesión de nuevo.'));

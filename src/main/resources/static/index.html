@@ -33,6 +33,7 @@
         <p id="login-error" class="mensaje mensaje--error" role="alert" hidden></p>
         <button class="btn btn--primario btn--ancho" type="submit">Entrar</button>
       </form>
+      <button id="btn-accesibilidad-login" class="btn btn--texto login__accesibilidad" type="button">Letra más grande y otras opciones</button>
     </section>
     <aside class="login__lado" aria-hidden="true">
       <p>Cada producto con su stock mínimo, cada movimiento con su responsable.</p>
@@ -54,12 +55,20 @@
       <header class="superior">
         <button id="btn-menu" class="btn btn--icono menu-movil" type="button" aria-label="Abrir menú" aria-controls="lateral" aria-expanded="false"></button>
         <h1 id="titulo-vista" class="superior__titulo"></h1>
+        <div class="superior__acciones">
+          <button id="btn-buscar" class="btn btn--suave btn--busqueda" type="button" aria-label="Búsqueda rápida" aria-keyshortcuts="Control+K" title="Búsqueda rápida (Ctrl + K)">
+            <span class="solo-ancho">Buscar</span><kbd class="solo-ancho">Ctrl K</kbd>
+          </button>
+          <button id="btn-accesibilidad" class="btn btn--suave" type="button" aria-label="Opciones de accesibilidad" title="Accesibilidad: tamaño de letra y contraste">
+            <span class="solo-ancho">Accesibilidad</span>
+          </button>
+        </div>
         <div class="superior__usuario">
           <div class="superior__datos">
             <span id="usuario-nombre"></span>
             <small id="usuario-rol"></small>
           </div>
-          <button id="btn-salir" class="btn btn--suave" type="button">Cerrar sesión</button>
+          <button id="btn-salir" class="btn btn--suave" type="button" aria-label="Cerrar sesión"><span class="solo-ancho">Cerrar sesión</span><span class="solo-estrecho">Salir</span></button>
         </div>
       </header>
       <main id="vista" class="vista" tabindex="-1"></main>
