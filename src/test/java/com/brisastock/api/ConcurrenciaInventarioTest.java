@@ -63,6 +63,7 @@ class ConcurrenciaInventarioTest extends PruebaApiBase {
                 listos.countDown();
                 try {
                     salida.await();
+                    autenticarComo("admin");   // cada hilo tiene su propio contexto de seguridad
                     inventarioService.registrarEntrada(
                             new MovimientoStockRequestDTO(p.getId(), 1, null, null));
                     exitosas.incrementAndGet();

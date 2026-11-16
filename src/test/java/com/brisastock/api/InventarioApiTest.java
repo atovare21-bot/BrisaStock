@@ -243,7 +243,7 @@ class InventarioApiTest extends PruebaApiBase {
         assertEquals(0, movs.get(0).getStockAnterior());
         assertEquals(12, movs.get(0).getStockPosterior());
         assertEquals("STOCK_INICIAL", movs.get(0).getReferencia());
-        assertEquals("admin", movs.get(0).getUsuario());
+        assertEquals("admin", movs.get(0).getUsuario().getUsername());
     }
 
     @Test

@@ -50,6 +50,7 @@ class VentaTransaccionalTest extends PruebaApiBase {
         Producto a = crearProducto("A", 10, 1000.0, false);
         Producto b = crearProducto("B", 10, 2000.0, false);
 
+        autenticarComo("admin");
         doThrow(new RuntimeException("fallo simulado al guardar la venta"))
                 .when(ventaRepositoryFallido).save(any(Venta.class));
 

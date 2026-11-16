@@ -6,6 +6,7 @@ import com.brisastock.exception.ConflictoNegocioException;
 import com.brisastock.exception.RecursoNoEncontradoException;
 import com.brisastock.exception.SolicitudInvalidaException;
 import com.brisastock.model.Producto;
+import com.brisastock.model.TipoMovimiento;
 import com.brisastock.model.Venta;
 import com.brisastock.repository.ProductoRepository;
 import com.brisastock.repository.VentaRepository;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -41,6 +43,10 @@ class VentaServiceTest {
     @Mock
     private InventarioService inventarioService;
 
+    // El usuario que registra la venta se resuelve aparte; aquí no hay BD ni sesión.
+    @Mock
+    private UsuarioSesion usuarioSesion;
+
     @InjectMocks
     private VentaService ventaService;
 
@@ -51,7 +57,6 @@ class VentaServiceTest {
         p.setStock(stock);
         p.setPrecioVenta(precio);
         p.setVencido(vencido);
-        p.setEstado("Disponible");
         return p;
     }
 
@@ -78,8 +83,13 @@ class VentaServiceTest {
 
         assertEquals(300.0, venta.getTotal());
         assertEquals(7, p.getStock());
-        assertEquals(10, venta.getDetalles().get(0).getStockAntesVenta());
-        assertEquals(7, venta.getDetalles().get(0).getStockDespuesVenta());
+        // La línea guarda cantidad y precio del momento; el subtotal se calcula
+        assertEquals(3, venta.getDetalles().get(0).getCantidad());
+        assertEquals(100.0, venta.getDetalles().get(0).getPrecioUnitario());
+        assertEquals(300.0, venta.getDetalles().get(0).getSubtotal());
+        // El stock antes/después queda en el movimiento de inventario (10 -> 7)
+        verify(inventarioService).registrarMovimiento(
+                eq(p), eq(TipoMovimiento.VENTA), eq(3), eq(10), eq(7), any(), any());
     }
 
     @Test

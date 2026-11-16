@@ -36,7 +36,7 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
 
     private Producto conFecha(String nombre, int stock, String fecha) {
         Producto p = crearProducto(nombre, stock, 1000.0, false);
-        p.setFechaVencimiento(fecha);
+        p.setFechaVencimiento(fecha == null ? null : LocalDate.parse(fecha));
         return productoRepository.save(p);
     }
 
@@ -60,7 +60,7 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
         LocalDate hoy = LocalDate.of(2026, 6, 15);
         assertTrue(FechaVencimiento.estaVencida("2026-06-14", hoy));
         assertFalse(FechaVencimiento.estaVencida("2026-06-15", hoy));   // sirve todo el día
-        assertFalse(FechaVencimiento.estaVencida("14/06/2026", hoy));   // formato antiguo = desconocida
+        assertFalse(FechaVencimiento.estaVencida("14/06/2026", hoy));   // texto ilegible = no vencida
     }
 
     @Test
@@ -90,31 +90,36 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
     }
 
     @Test
-    void actualizar_fechaInvalida_devuelve400_perofechaAntiguaSinCambiosSeTolera() throws Exception {
-        Producto legado = conFecha("Legado", 5, "31/12/2027");
+    void actualizar_fechaInvalida_devuelve400YConservaLaFecha_fechaValidaSeGuarda() throws Exception {
+        Producto p = conFecha("Yogur", 5, "2027-12-31");
+        LocalDate original = LocalDate.of(2027, 12, 31);
 
-        // Nueva fecha inválida -> 400 y no se toca el registro
-        mvc.perform(put("/api/productos/" + legado.getId()).with(admin())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombre\":\"Legado\",\"precioCompra\":1,\"precioVenta\":2,\"fechaVencimiento\":\"2027-02-30\"}"))
-                .andExpect(status().isBadRequest());
-        assertEquals("31/12/2027", productoRepository.findById(legado.getId()).orElseThrow().getFechaVencimiento());
+        // Fecha imposible o con formato distinto de AAAA-MM-DD -> 400 y no se toca el registro.
+        // La columna es DATE: ya no puede guardarse un texto que no sea una fecha real.
+        for (String mala : new String[]{"2027-02-30", "31/12/2027"}) {
+            mvc.perform(put("/api/productos/" + p.getId()).with(admin())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"nombre\":\"Yogur\",\"precioCompra\":1,\"precioVenta\":2,\"fechaVencimiento\":\"" + mala + "\"}"))
+                    .andExpect(status().isBadRequest());
+            assertEquals(original, productoRepository.findById(p.getId()).orElseThrow().getFechaVencimiento());
+        }
 
-        // Reenviar el MISMO valor antiguo (la UI lo hace al editar otros campos) -> se acepta sin convertirlo
-        mvc.perform(put("/api/productos/" + legado.getId()).with(admin())
+        // Fecha válida -> se guarda y el JSON la devuelve en formato AAAA-MM-DD
+        mvc.perform(put("/api/productos/" + p.getId()).with(admin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombre\":\"Legado 2\",\"precioCompra\":1,\"precioVenta\":2,\"fechaVencimiento\":\"31/12/2027\"}"))
-                .andExpect(status().isOk());
-        Producto tras = productoRepository.findById(legado.getId()).orElseThrow();
-        assertEquals("Legado 2", tras.getNombre());
-        assertEquals("31/12/2027", tras.getFechaVencimiento());
+                        .content("{\"nombre\":\"Yogur 2\",\"precioCompra\":1,\"precioVenta\":2,\"fechaVencimiento\":\"2028-01-15\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fechaVencimiento").value("2028-01-15"));
+        Producto tras = productoRepository.findById(p.getId()).orElseThrow();
+        assertEquals("Yogur 2", tras.getNombre());
+        assertEquals(LocalDate.of(2028, 1, 15), tras.getFechaVencimiento());
     }
 
     @Test
-    void vencidoPorFecha_sigueFechaPasadaFuturoYFormatoAntiguo() throws Exception {
+    void vencidoPorFecha_sigueFechaPasadaFuturaYSinFecha() throws Exception {
         Producto pasado = conFecha("Pasado", 5, "2020-01-01");
         Producto futuro = conFecha("Futuro", 5, "2099-01-01");
-        Producto antiguo = conFecha("Antiguo", 5, "01/01/2020");
+        Producto antiguo = conFecha("SinFecha", 5, null);
 
         mvc.perform(get("/api/productos/" + pasado.getId()).with(admin()))
                 .andExpect(jsonPath("$.vencidoPorFecha").value(true));
@@ -138,9 +143,9 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
     }
 
     @Test
-    void venta_fechaFuturaOFormatoAntiguo_sePermite() throws Exception {
+    void venta_fechaFuturaOSinFecha_sePermite() throws Exception {
         Producto futuro = conFecha("Futuro", 5, "2099-01-01");
-        Producto antiguo = conFecha("Antiguo", 5, "01/01/2020");
+        Producto antiguo = conFecha("SinFecha", 5, null);
         for (Producto p : new Producto[]{futuro, antiguo}) {
             mvc.perform(post("/api/ventas").with(cajero())
                             .contentType(MediaType.APPLICATION_JSON).content(venta(p.getId(), 1)))
@@ -150,11 +155,11 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
     }
 
     @Test
-    void reporteVencidos_incluyeIndicadorManualYFechaPasada_peroNoFuturasNiAntiguas() throws Exception {
+    void reporteVencidos_incluyeIndicadorManualYFechaPasada_peroNoFuturasNiSinFecha() throws Exception {
         crearProducto("Manual", 5, 1000.0, true);
         conFecha("Pasado", 5, "2020-01-01");
         conFecha("Futuro", 5, "2099-01-01");
-        conFecha("Antiguo", 5, "01/01/2020");
+        conFecha("SinFecha", 5, null);
 
         mvc.perform(get("/api/reportes/vencidos").with(admin()))
                 .andExpect(status().isOk())
@@ -164,13 +169,14 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
     // ---------- Stock bajo y agotados ----------
 
     @Test
-    void reporteAgotados_usaStockReal_noElTextoDeEstado() throws Exception {
+    void reporteAgotados_usaStockReal_yElEstadoSeCalcula() throws Exception {
+        // "estado" ya no es una columna que pueda quedar desfasada: se calcula del stock
         Producto sinStock = crearProducto("SinStock", 0, 1000.0, false);
-        sinStock.setEstado("Disponible");                      // texto desfasado
-        productoRepository.save(sinStock);
         Producto conStock = crearProducto("ConStock", 5, 1000.0, false);
-        conStock.setEstado("Agotado");                         // texto desfasado
-        productoRepository.save(conStock);
+        mvc.perform(get("/api/productos/" + sinStock.getId()).with(admin()))
+                .andExpect(jsonPath("$.estado").value("Agotado"));
+        mvc.perform(get("/api/productos/" + conStock.getId()).with(admin()))
+                .andExpect(jsonPath("$.estado").value("Disponible"));
 
         mvc.perform(get("/api/reportes/agotados").with(admin()))
                 .andExpect(status().isOk())
@@ -209,9 +215,9 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
         Producto t = productoRepository.findById(p.getId()).orElseThrow();
         assertEquals("Cola 2", t.getNombre());
         assertEquals("Marca", t.getMarca());
-        assertEquals("Bebidas", t.getCategoria());
+        assertEquals("Bebidas", t.getCategoria().getNombre());
         assertEquals(2, t.getStockMinimo());
-        assertEquals("2099-05-05", t.getFechaVencimiento());
+        assertEquals(LocalDate.of(2099, 5, 5), t.getFechaVencimiento());
         assertEquals(Boolean.FALSE, t.getVencido());
         assertEquals(5, t.getStock());
         assertEquals(0, movimientoRepository.count());
@@ -229,7 +235,7 @@ class CalidadDatosProductoApiTest extends PruebaApiBase {
         Producto t = productoRepository.findById(p.getId()).orElseThrow();
         assertEquals(null, t.getMarca());
         assertEquals(null, t.getFechaVencimiento());
-        assertEquals("Bebidas", t.getCategoria());
+        assertEquals("Bebidas", t.getCategoria().getNombre());
     }
 
     @Test

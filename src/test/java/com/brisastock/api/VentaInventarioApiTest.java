@@ -63,7 +63,7 @@ class VentaInventarioApiTest extends PruebaApiBase {
         for (MovimientoInventario m : movs) {
             assertEquals(TipoMovimiento.VENTA, m.getTipo());
             assertEquals("VENTA #" + venta.getId(), m.getReferencia());
-            assertEquals("cajero", m.getUsuario());
+            assertEquals("cajero", m.getUsuario().getUsername());
             assertNotNull(m.getFecha());
             assertEquals(m.getStockAnterior() - m.getCantidad(), m.getStockPosterior());
         }

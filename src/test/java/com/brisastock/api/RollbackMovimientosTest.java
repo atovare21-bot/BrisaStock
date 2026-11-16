@@ -52,6 +52,7 @@ class RollbackMovimientosTest extends PruebaApiBase {
         Producto a = crearProducto("A", 10, 1000.0, false);
         Producto b = crearProducto("B", 10, 2000.0, false);
 
+        autenticarComo("admin");
         doThrow(new RuntimeException("fallo simulado al registrar el movimiento"))
                 .when(movimientoRepositoryFallido).save(any(MovimientoInventario.class));
 
@@ -70,6 +71,7 @@ class RollbackMovimientosTest extends PruebaApiBase {
         Producto b = crearProducto("B", 10, 2000.0, false);
 
         // La venta se registra bien (el mock de movimientos acepta y no hace nada)
+        autenticarComo("admin");
         Venta venta = ventaService.registrarVenta(solicitud(linea(a.getId(), 3), linea(b.getId(), 4)));
         assertEquals(7, stockActual(a.getId()));
         assertEquals(6, stockActual(b.getId()));
