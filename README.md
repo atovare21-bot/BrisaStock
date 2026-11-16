@@ -6,6 +6,24 @@ Sistema de gestión de inventarios para microempresas (Java 21, Spring Boot 3.5,
 - Java 21
 - MariaDB/MySQL con una base llamada `brisastock_db` (la aplicación crea/actualiza las tablas al arrancar, `ddl-auto=update`; **haga un respaldo antes de arrancar contra datos reales**).
 
+## Base de datos (modelo v2)
+Seis tablas relacionadas. La estructura completa está en [`db/esquema.sql`](db/esquema.sql).
+
+| Tabla | Qué guarda | Se relaciona con |
+|---|---|---|
+| `usuarios` | Personas que pueden entrar y su rol | registra `ventas`, cancela `ventas`, hace `movimientos_inventario` |
+| `categorias` | Categorías de productos (una fila por categoría) | tiene muchos `productos` |
+| `productos` | Catálogo, precios, existencias y vencimiento | pertenece a una `categoria` |
+| `ventas` | Cada venta, quién la registró y, si aplica, quién la canceló | la registra un `usuario` |
+| `detalle_ventas` | Líneas de cada venta: cantidad y precio del momento | une `ventas` con `productos` |
+| `movimientos_inventario` | Historial de todo cambio de stock | de un `producto`, hecho por un `usuario` |
+
+- El dinero se guarda como `DECIMAL(12,2)` y la fecha de vencimiento como `DATE`.
+- `detalle_ventas` solo guarda lo que no se puede obtener de otra tabla: la cantidad y el precio unitario del momento. El nombre del producto se lee del producto, el subtotal se calcula y el stock antes/después está en `movimientos_inventario`.
+- En el JSON de la API los usuarios relacionados se publican solo como su `username` y la categoría como su nombre.
+- **Instalación nueva:** la aplicación crea las tablas al arrancar (`ddl-auto=update`).
+- **Base con el modelo anterior (5 tablas):** haga un respaldo y aplique una sola vez [`db/migracion_v2.sql`](db/migracion_v2.sql); el archivo explica cada paso. No borra productos, ventas, movimientos ni usuarios.
+
 ## Configuración por variables de entorno
 Todas son opcionales. Si no define ninguna, la aplicación usa la configuración local de desarrollo de siempre (`localhost:3306`, base `brisastock_db`, usuario `root`, contraseña vacía).
 
@@ -71,17 +89,9 @@ Pensadas para que cualquier persona pueda usar la aplicación sin enredarse. No 
 Archivos: `static/js/accesibilidad.js`, `static/js/busqueda.js` y el bloque "Accesibilidad y búsqueda rápida" de `static/css/app.css`.
 
 ## Trabajo en equipo con Git
-```powershell
-git clone <URL del repositorio>
-cd <carpeta del repositorio>
-git pull                      # antes de empezar: traer lo último
-# ... hacer cambios ...
-.\mvnw.cmd test               # las pruebas deben pasar
-git add .
-git commit -m "Describe el cambio en una frase"
-git push
-```
-No suba contraseñas, respaldos `.sql` ni la carpeta `target/`.
+Repositorio: <https://github.com/atovare21-bot/BrisaStock>. La guía paso a paso para cada integrante está en [`CONTRIBUIR.md`](CONTRIBUIR.md).
+
+No suba contraseñas, respaldos de la base de datos ni la carpeta `target/`.
 
 ## Swagger / OpenAPI
 `/swagger-ui.html` y `/v3/api-docs` **requieren iniciar sesión como ADMIN** (el navegador pedirá usuario y contraseña). Para apagarlos: `SWAGGER_ENABLED=false`.
@@ -91,9 +101,10 @@ No suba contraseñas, respaldos `.sql` ni la carpeta `target/`.
 - No hay límite de intentos de inicio de sesión.
 
 ## Calidad de datos de productos (Fase 6)
-- **Fecha de vencimiento:** la API exige `AAAA-MM-DD` con fecha real de calendario (`2026-02-30` se rechaza con 400). Vacío = sin fecha. Los registros antiguos con otro formato **no se convierten ni se sobrescriben**: se tratan como "fecha desconocida" (no bloquean ventas, no cuentan como vencidos). Al editar un producto, reenviar la misma fecha antigua se tolera.
-- **Vencido:** un producto se considera vencido si tiene el indicador `vencido`, el estado heredado `Vencido`, o una fecha válida **anterior a hoy** (campo de solo lectura `vencidoPorFecha`). Esos productos no se pueden vender (409).
+- **Fecha de vencimiento:** la API exige `AAAA-MM-DD` con fecha real de calendario (`2026-02-30` se rechaza con 400). Vacío = sin fecha. En la base es una columna `DATE`, así que no puede guardarse un texto que no sea una fecha.
+- **Vencido:** un producto se considera vencido si tiene la marca manual `vencido` o una fecha **anterior a hoy** (campo de solo lectura `vencidoPorFecha`). Esos productos no se pueden vender (409).
+- **Estado:** `Disponible`, `Agotado` o `Vencido` ya no es una columna; se calcula a partir del stock y de la marca de vencido, y se publica en el JSON como `estado`.
 - **Stock bajo:** una sola regla, `stock <= stockMinimo` de cada producto (`stockBajo` en el JSON, `/api/productos/stock-bajo`, `/api/reportes/stock-bajo`). La ruta antigua `/api/productos/stock-bajo/{n}` sigue existiendo pero **ignora el número**.
-- **Agotado:** `stock <= 0` real (no el texto de `estado`). `/api/productos/estado/{estado}` sigue filtrando por el texto guardado.
-- **Desactivación lógica:** `PATCH /api/productos/{id}/desactivar` y `/activar` (solo ADMIN). Un producto desactivado no se puede vender (409) y no aparece en alertas, reportes ni panel; sigue en el listado con `activo:false`, y sus ventas y movimientos se conservan (incluso se puede cancelar una venta suya). Requiere la columna nueva `productos.activo` (`boolean not null default true`): con `ddl-auto=update` se agrega sola y todos los productos existentes quedan activos. **Haga un respaldo antes de arrancar.**
+- **Agotado:** `stock <= 0`. `/api/productos/estado/{estado}` filtra por el estado calculado.
+- **Desactivación lógica:** `PATCH /api/productos/{id}/desactivar` y `/activar` (solo ADMIN). Un producto desactivado no se puede vender (409) y no aparece en alertas, reportes ni panel; sigue en el listado con `activo:false`, y sus ventas y movimientos se conservan (incluso se puede cancelar una venta suya).
 - **PUT de producto:** `marca`, `categoria`, `descripcion`, `stockMinimo`, `vencido` y `fechaVencimiento` omitidos (null) **conservan** su valor; una cadena vacía `""` borra a propósito marca/categoría/descripción/fecha. El stock nunca cambia por PUT.
