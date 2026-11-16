@@ -11,18 +11,23 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private String username;
 
     // Defensa en profundidad: aunque algún día se serialice la entidad,
     // el hash nunca sale en el JSON. Las respuestas usan UsuarioResponseDTO.
     @JsonIgnore
+    @Column(nullable = false, length = 100)
     private String password;
 
+    // ADMIN o USER (ver Rol)
+    @Column(nullable = false, length = 20)
     private String rol;
 
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
     private Boolean activo = true;
 
     // Constructor vacío

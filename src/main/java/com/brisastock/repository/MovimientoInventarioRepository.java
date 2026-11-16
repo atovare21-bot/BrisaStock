@@ -12,10 +12,10 @@ import java.util.List;
 public interface MovimientoInventarioRepository
         extends JpaRepository<MovimientoInventario, Long> {
 
-    @EntityGraph(attributePaths = "producto")
+    @EntityGraph(attributePaths = {"producto", "usuario"})
     List<MovimientoInventario> findAllByOrderByFechaDescIdDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "producto")
+    @EntityGraph(attributePaths = {"producto", "usuario"})
     List<MovimientoInventario> findByProductoIdOrderByFechaDescIdDesc(Long productoId, Pageable pageable);
 
     boolean existsByProductoId(Long productoId);

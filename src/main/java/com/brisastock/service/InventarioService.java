@@ -39,6 +39,9 @@ public class InventarioService {
     @Autowired
     private MovimientoInventarioRepository movimientoRepository;
 
+    @Autowired
+    private UsuarioSesion usuarioSesion;
+
     // ------------------------------------------------------------------
     // Operaciones de inventario
     // ------------------------------------------------------------------
@@ -122,7 +125,7 @@ public class InventarioService {
     // ------------------------------------------------------------------
 
     /**
-     * Fija el nuevo stock del producto, recalcula su estado y registra el
+     * Fija el nuevo stock del producto y registra el
      * movimiento. Debe llamarse dentro de una transacción activa.
      * Defensa final: nunca deja stock negativo.
      */
@@ -135,7 +138,6 @@ public class InventarioService {
         int anterior = stockDe(producto);
 
         producto.setStock(nuevoStock);
-        producto.setEstado(calcularEstado(producto));
         productoRepository.save(producto);
 
         return registrarMovimiento(producto, tipo, cantidad, anterior, nuevoStock, referencia, observacion);
@@ -152,19 +154,10 @@ public class InventarioService {
         m.setStockAnterior(stockAnterior);
         m.setStockPosterior(stockPosterior);
         m.setFecha(LocalDateTime.now());
-        m.setUsuario(UsuarioActual.nombre());
+        m.setUsuario(usuarioSesion.requerido());
         m.setReferencia(limpiar(referencia));
         m.setObservacion(limpiar(observacion));
         return movimientoRepository.save(m);
-    }
-
-    /** Estado automático: Vencido > Agotado > Disponible (conserva "Vencido" heredado de la BD). */
-    static String calcularEstado(Producto producto) {
-        if (Boolean.TRUE.equals(producto.getVencido())
-                || "Vencido".equalsIgnoreCase(producto.getEstado())) {
-            return "Vencido";
-        }
-        return stockDe(producto) == 0 ? "Agotado" : "Disponible";
     }
 
     // Un stock nulo en la BD se trata como 0

@@ -43,6 +43,7 @@ export async function render(raiz, yo) {
         tabla([
           { titulo: 'Venta', principal: true, celda: (v) => `#${v.id}` },
           { titulo: 'Fecha', celda: (v) => fecha(v.fechaVenta) },
+          { titulo: 'Registró', celda: (v) => v.usuario ?? '—' },
           { titulo: 'Líneas', num: true, celda: (v) => entero(v.detalles?.length ?? 0) },
           { titulo: 'Total', num: true, celda: (v) => dinero(v.total) },
           { titulo: 'Estado', celda: (v) => h('span', { class: `insignia ${v.estado === 'CANCELADA' ? 'insignia--error' : 'insignia--ok'}` }, v.estado === 'CANCELADA' ? 'Cancelada' : 'Activa') },
@@ -85,7 +86,7 @@ function detalleVenta(v) {
     titulo: `Venta #${v.id}`, ancho: true,
     cuerpo: [
       h('dl', { class: 'datos', style: 'margin-bottom:1rem' },
-        fila('Fecha', fecha(v.fechaVenta)), fila('Cliente', v.cliente), fila('Total', dinero(v.total)),
+        fila('Fecha', fecha(v.fechaVenta)), fila('Registrada por', v.usuario), fila('Total', dinero(v.total)),
         fila('Estado', v.estado === 'CANCELADA' ? 'Cancelada' : 'Activa'),
         v.estado === 'CANCELADA' ? fila('Cancelada', `${fecha(v.fechaCancelacion)} por ${v.usuarioCancelacion ?? '—'}`) : null,
         v.motivoCancelacion ? fila('Motivo', v.motivoCancelacion) : null),

@@ -15,13 +15,13 @@ import jakarta.validation.constraints.Size;
 public record ProductoRequestDTO(
 
         @NotBlank(message = "El nombre es obligatorio")
-        @Size(max = 255, message = "El nombre no puede superar 255 caracteres")
+        @Size(max = 150, message = "El nombre no puede superar 150 caracteres")
         String nombre,
 
-        @Size(max = 255, message = "La marca no puede superar 255 caracteres")
+        @Size(max = 100, message = "La marca no puede superar 100 caracteres")
         String marca,
 
-        @Size(max = 255, message = "La categoría no puede superar 255 caracteres")
+        @Size(max = 80, message = "La categoría no puede superar 80 caracteres")
         String categoria,
 
         @Size(max = 255, message = "La descripción no puede superar 255 caracteres")

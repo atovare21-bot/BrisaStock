@@ -35,6 +35,9 @@ public class VentaService {
     @Autowired
     private InventarioService inventarioService;
 
+    @Autowired
+    private UsuarioSesion usuarioSesion;
+
     // Cambio de stock pendiente de registrar como movimiento VENTA
     private record CambioStock(Producto producto, int cantidad, int antes, int despues) {
     }
@@ -95,7 +98,8 @@ public class VentaService {
 
         Venta venta = new Venta();
 
-        venta.setCliente("Cliente General");
+        // Quién registra la venta (llave foránea a usuarios)
+        venta.setUsuario(usuarioSesion.requerido());
         venta.setFechaVenta(LocalDateTime.now());
 
         List<DetalleVenta> detalles = new ArrayList<>();
@@ -120,26 +124,14 @@ public class VentaService {
             detalle.setVenta(venta);
             detalle.setCantidad(item.getCantidad());
 
-            // Guardar datos históricos
-            detalle.setNombreProducto(producto.getNombre());
-            detalle.setMarcaProducto(producto.getMarca());
-            detalle.setCategoriaProducto(producto.getCategoria());
-            detalle.setStockAntesVenta(stockAntes);
-            detalle.setStockDespuesVenta(stockDespues);
-
-            // Guardar precio histórico
+            // Precio histórico: el del momento de la venta. El stock antes/después
+            // queda en el movimiento de inventario, no se duplica aquí.
             detalle.setPrecioUnitario(precio);
-            detalle.setSubtotal(subtotal);
 
             totalVenta += subtotal;
 
-            // Descontar stock
+            // Descontar stock (el estado Agotado/Disponible se calcula a partir del stock)
             producto.setStock(stockDespues);
-
-            // Estado automático
-            if (stockDespues == 0) {
-                producto.setEstado("Agotado");
-            }
 
             productoRepository.save(producto);
 
@@ -202,7 +194,7 @@ public class VentaService {
 
         venta.setEstado(EstadoVenta.CANCELADA);
         venta.setFechaCancelacion(LocalDateTime.now());
-        venta.setUsuarioCancelacion(UsuarioActual.nombre());
+        venta.setUsuarioCancelacion(usuarioSesion.requerido());
         venta.setMotivoCancelacion(motivo == null || motivo.isBlank() ? null : motivo.trim());
 
         return ventaRepository.save(venta);
@@ -267,8 +259,7 @@ public class VentaService {
                             + producto.getNombre());
         }
 
-        // Vencido por indicador manual, estado heredado o fecha válida ya pasada.
-        // Una fecha con formato antiguo/ilegible no bloquea la venta (se desconoce).
+        // Vencido por la marca manual o porque su fecha de vencimiento ya pasó.
         if (producto.estaVencidoEfectivo()) {
             throw new ConflictoNegocioException(
                     "No se puede vender el producto vencido: "

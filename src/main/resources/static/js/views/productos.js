@@ -146,9 +146,10 @@ export async function verDetalle(id, admin) {
 function abrirFormulario(producto, alGuardar) {
   const nuevo = !producto;
   const p = producto || {};
-  const nombre = h('input', { maxlength: 255, required: true, value: p.nombre ?? '' });
-  const marca = h('input', { maxlength: 255, value: p.marca ?? '' });
-  const categoria = h('input', { maxlength: 255, value: p.categoria ?? '' });
+  // Longitudes iguales a las de las columnas de la base de datos
+  const nombre = h('input', { maxlength: 150, required: true, value: p.nombre ?? '' });
+  const marca = h('input', { maxlength: 100, value: p.marca ?? '' });
+  const categoria = h('input', { maxlength: 80, value: p.categoria ?? '' });
   const descripcion = h('input', { maxlength: 255, value: p.descripcion ?? '' });
   const precioCompra = h('input', { type: 'number', min: 0, step: 'any', inputmode: 'decimal', required: true, value: p.precioCompra ?? '' });
   const precioVenta = h('input', { type: 'number', min: 0, step: 'any', inputmode: 'decimal', required: true, value: p.precioVenta ?? '' });

@@ -5,9 +5,11 @@ import com.brisastock.dto.ProductoRequestDTO;
 import com.brisastock.exception.ConflictoNegocioException;
 import com.brisastock.exception.RecursoNoEncontradoException;
 import com.brisastock.exception.SolicitudInvalidaException;
+import com.brisastock.model.Categoria;
 import com.brisastock.model.FechaVencimiento;
 import com.brisastock.model.Producto;
 import com.brisastock.model.TipoMovimiento;
+import com.brisastock.repository.CategoriaRepository;
 import com.brisastock.repository.DetalleVentaRepository;
 import com.brisastock.repository.MovimientoInventarioRepository;
 import com.brisastock.repository.ProductoRepository;
@@ -31,6 +33,9 @@ public class ProductoService {
 
     @Autowired
     private InventarioService inventarioService;
+
+    @Autowired
+    private CategoriaRepository categoriaRepository;
 
     // Listar todos los productos
     public List<Producto> listarProductos() {
@@ -83,21 +88,18 @@ public class ProductoService {
         // Fecha: si viene distinta de la guardada debe ser AAAA-MM-DD real. Si es igual
         // a la guardada (p. ej. un formato antiguo) se tolera para poder editar el resto.
         String fechaNueva = datos.fechaVencimiento();
-        if (fechaNueva != null && !fechaNueva.trim().equals(producto.getFechaVencimiento())) {
-            validarFecha(fechaNueva);
-        }
+        validarFecha(fechaNueva);
 
         producto.setNombre(datos.nombre().trim());
         // Campos opcionales: null (omitido) = conservar lo guardado; "" = borrar a propósito.
         if (datos.marca() != null) producto.setMarca(vacioANull(datos.marca()));
-        if (datos.categoria() != null) producto.setCategoria(vacioANull(datos.categoria()));
+        if (datos.categoria() != null) producto.setCategoria(resolverCategoria(datos.categoria()));
         if (datos.descripcion() != null) producto.setDescripcion(vacioANull(datos.descripcion()));
         producto.setPrecioCompra(datos.precioCompra());
         producto.setPrecioVenta(datos.precioVenta());
         if (datos.stockMinimo() != null) producto.setStockMinimo(datos.stockMinimo());
         if (datos.vencido() != null) producto.setVencido(datos.vencido());
-        if (fechaNueva != null) producto.setFechaVencimiento(vacioANull(fechaNueva));
-        producto.setEstado(calcularEstado(producto));
+        if (fechaNueva != null) producto.setFechaVencimiento(FechaVencimiento.interpretar(fechaNueva).orElse(null));
 
         return productoRepository.save(producto);
     }
@@ -135,12 +137,15 @@ public class ProductoService {
 
     // Buscar por categoría
     public List<Producto> buscarPorCategoria(String categoria) {
-        return productoRepository.findByCategoria(categoria);
+        return productoRepository.findByCategoriaNombreIgnoreCase(categoria);
     }
 
     // Buscar por estado
     public List<Producto> buscarPorEstado(String estado) {
-        return productoRepository.findByEstado(estado);
+        // El estado ya no es una columna: se calcula por producto
+        return productoRepository.findAll().stream()
+                .filter(p -> p.getEstado().equalsIgnoreCase(estado))
+                .toList();
     }
 
     // Stock bajo con la regla única: stock <= stockMinimo de cada producto
@@ -161,7 +166,7 @@ public class ProductoService {
 
         producto.setNombre(datos.nombre().trim());
         producto.setMarca(vacioANull(datos.marca()));
-        producto.setCategoria(vacioANull(datos.categoria()));
+        producto.setCategoria(resolverCategoria(datos.categoria()));
         producto.setDescripcion(vacioANull(datos.descripcion()));
         producto.setPrecioCompra(datos.precioCompra());
         producto.setPrecioVenta(datos.precioVenta());
@@ -169,9 +174,7 @@ public class ProductoService {
         producto.setStockMinimo(datos.stockMinimo());
         producto.setVencido(datos.vencido());
         validarFecha(datos.fechaVencimiento());
-        producto.setFechaVencimiento(vacioANull(datos.fechaVencimiento()));
-
-        producto.setEstado(calcularEstado(producto));
+        producto.setFechaVencimiento(FechaVencimiento.interpretar(datos.fechaVencimiento()).orElse(null));
     }
 
     // Una fecha enviada por la API debe ser AAAA-MM-DD y existir en el calendario
@@ -182,19 +185,21 @@ public class ProductoService {
         }
     }
 
+    /**
+     * Devuelve la categoría con ese nombre; si no existe todavía, la crea.
+     * Texto vacío = el producto queda sin categoría.
+     */
+    private Categoria resolverCategoria(String nombre) {
+        String limpio = vacioANull(nombre);
+        if (limpio == null) {
+            return null;
+        }
+        return categoriaRepository.findByNombreIgnoreCase(limpio)
+                .orElseGet(() -> categoriaRepository.save(new Categoria(limpio)));
+    }
+
     private static String vacioANull(String texto) {
         return texto == null || texto.isBlank() ? null : texto.trim();
     }
-
-    // Estado automático: Vencido > Agotado > Disponible
-    private String calcularEstado(Producto producto) {
-
-        if (Boolean.TRUE.equals(producto.getVencido())) {
-            return "Vencido";
-        }
-        if (producto.getStock() == null || producto.getStock() <= 0) {
-            return "Agotado";
-        }
-        return "Disponible";
-    }
 }
+

@@ -29,7 +29,7 @@ public record MovimientoInventarioDTO(
                 m.getStockAnterior(),
                 m.getStockPosterior(),
                 m.getFecha(),
-                m.getUsuario(),
+                m.getUsuario().getUsername(),
                 m.getReferencia(),
                 m.getObservacion());
     }
