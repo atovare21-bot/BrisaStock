@@ -160,4 +160,28 @@ class ProductoApiTest extends PruebaApiBase {
         mvc.perform(get("/api/productos/stock-bajo/10").with(admin())).andExpect(status().isOk());
         mvc.perform(get("/api/productos/buscar").with(admin())).andExpect(status().isBadRequest());
     }
+
+    @Test
+    void listarPagina_respetaPaginaBusquedaYFiltro() throws Exception {
+        crearProducto("Arroz", 8, 1000.0, false);
+        crearProducto("Atún", 0, 1500.0, false);
+        crearProducto("Azúcar", 6, 900.0, false);
+
+        mvc.perform(get("/api/productos/pagina").param("pagina", "1").param("tamano", "2").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].nombre").value("Azúcar"));
+
+        mvc.perform(get("/api/productos/pagina").param("nombre", "Atún").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].nombre").value("Atún"));
+
+        mvc.perform(get("/api/productos/pagina").param("filtro", "agotado").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].nombre").value("Atún"));
+    }
 }

@@ -113,4 +113,21 @@ class VentaApiTest extends PruebaApiBase {
         mvc.perform(get("/api/ventas/999999").with(httpBasic("admin", "Admin12345")))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void historialPaginado_ordenaVentasRecientesPrimero() throws Exception {
+        Producto p = crearProducto("Arroz", 10, 1000.0, false);
+        vender(venta(linea(p.getId(), 1)));
+        vender(venta(linea(p.getId(), 1)));
+        long ultimaVenta = ventaRepository.findAll().stream()
+                .mapToLong(v -> v.getId()).max().orElseThrow();
+
+        mvc.perform(get("/api/ventas/pagina").param("pagina", "0").param("tamano", "1")
+                        .with(httpBasic("admin", "Admin12345")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(ultimaVenta));
+    }
 }

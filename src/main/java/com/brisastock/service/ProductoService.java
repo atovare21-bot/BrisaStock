@@ -13,6 +13,8 @@ import com.brisastock.repository.CategoriaRepository;
 import com.brisastock.repository.DetalleVentaRepository;
 import com.brisastock.repository.MovimientoInventarioRepository;
 import com.brisastock.repository.ProductoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,15 @@ public class ProductoService {
     // Listar todos los productos
     public List<Producto> listarProductos() {
         return productoRepository.findAll();
+    }
+
+    public Page<Producto> listarPagina(String nombre, String filtro, Pageable pageable) {
+        String busqueda = nombre == null || nombre.isBlank() ? null : nombre.trim();
+        String criterio = switch (filtro == null ? "" : filtro.toLowerCase()) {
+            case "bajo", "agotado", "vencido", "inactivo" -> filtro.toLowerCase();
+            default -> "todos";
+        };
+        return productoRepository.buscarPagina(busqueda, criterio, pageable);
     }
 
     // Consultar un producto por ID (404 si no existe)

@@ -12,6 +12,8 @@ import com.brisastock.model.TipoMovimiento;
 import com.brisastock.model.Venta;
 import com.brisastock.repository.ProductoRepository;
 import com.brisastock.repository.VentaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -203,6 +205,10 @@ public class VentaService {
     // Obtener todas las ventas
     public List<Venta> listarVentas() {
         return ventaRepository.findAll();
+    }
+
+    public Page<Venta> listarPagina(Pageable pageable) {
+        return ventaRepository.findAllByOrderByFechaVentaDescIdDesc(pageable);
     }
 
     // Buscar venta por ID (404 si no existe)

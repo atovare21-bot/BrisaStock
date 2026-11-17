@@ -2,8 +2,12 @@ package com.brisastock.controller;
 
 import com.brisastock.dto.ProductoActualizacionDTO;
 import com.brisastock.dto.ProductoRequestDTO;
+import com.brisastock.dto.PaginaDTO;
 import com.brisastock.model.Producto;
 import com.brisastock.service.ProductoService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +25,19 @@ public class ProductoController {
     @GetMapping
     public List<Producto> listarProductos() {
         return productoService.listarProductos();
+    }
+
+    // Listado paginado para la interfaz; la ruta antigua conserva su respuesta en arreglo.
+    @GetMapping("/pagina")
+    public PaginaDTO<Producto> listarPagina(
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "20") int tamano,
+            @RequestParam(required = false) String nombre,
+            @RequestParam(defaultValue = "todos") String filtro) {
+        Pageable pageable = PageRequest.of(Math.max(0, pagina),
+                Math.max(1, Math.min(tamano, 100)),
+                Sort.by(Sort.Direction.ASC, "nombre").and(Sort.by("id")));
+        return PaginaDTO.desde(productoService.listarPagina(nombre, filtro, pageable));
     }
 
     // Obtener un producto por ID

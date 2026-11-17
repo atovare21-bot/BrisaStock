@@ -3,12 +3,27 @@ package com.brisastock.repository;
 import com.brisastock.model.Producto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
+
+    @Query("select p from Producto p where "
+            + "(:nombre is null or lower(p.nombre) like lower(concat('%', :nombre, '%'))) and "
+            + "(:filtro = 'todos' or "
+            + "(:filtro = 'bajo' and coalesce(p.stock, 0) <= coalesce(p.stockMinimo, 0)) or "
+            + "(:filtro = 'agotado' and p.activo = true and coalesce(p.stock, 0) <= 0) or "
+            + "(:filtro = 'vencido' and p.activo = true and "
+            + "(p.vencido = true or p.fechaVencimiento < current_date)) or "
+            + "(:filtro = 'inactivo' and p.activo = false))")
+    Page<Producto> buscarPagina(@Param("nombre") String nombre,
+                                @Param("filtro") String filtro,
+                                Pageable pageable);
 
     List<Producto> findByNombreContainingIgnoreCase(String nombre);
 
