@@ -16,6 +16,10 @@ export async function render(raiz, yo) {
   let productos = [];
   let filtro = 'todos';
   let texto = '';
+  let pagina = 0;
+  let paginas = 0;
+  let total = 0;
+  const tamanoPagina = 20;
 
   const zona = h('div', { 'aria-live': 'polite' });
   const buscar = h('input', { type: 'search', placeholder: 'Buscar por nombre', 'aria-label': 'Buscar por nombre', maxlength: 100 });
@@ -33,16 +37,8 @@ export async function render(raiz, yo) {
     admin ? h('button', { class: 'btn btn--primario', type: 'button', onclick: () => abrirFormulario(null, recargar) }, 'Nuevo producto') : null);
   raiz.append(barra, zona);
 
-  const aplicaFiltro = (p) => {
-    if (filtro === 'bajo') return p.stockBajo;
-    if (filtro === 'agotado') return p.activo !== false && (p.stock ?? 0) <= 0;
-    if (filtro === 'vencido') return p.activo !== false && (p.vencido === true || p.vencidoPorFecha === true);
-    if (filtro === 'inactivo') return p.activo === false;
-    return true;
-  };
-
   function pintar() {
-    const visibles = productos.filter(aplicaFiltro);
+    const visibles = productos;
     vaciar(zona).append(h('section', { class: 'seccion' },
       tabla([
         { titulo: 'Producto', principal: true, celda: (p) => [p.nombre, h('span', { class: 'sub' }, [p.marca, p.categoria].filter(Boolean).join(' · '))] },
@@ -63,16 +59,34 @@ export async function render(raiz, yo) {
         vacioDetalle: texto || filtro !== 'todos' ? 'Prueba con otro nombre o cambia el filtro.' : (admin ? 'Crea el primero con “Nuevo producto”.' : 'Un administrador debe registrarlos.'),
       }),
       h('p', { class: 'seccion__cuerpo suave pequeno' },
-        `${entero(visibles.length)} de ${entero(productos.length)} productos. La barra del stock marca el mínimo de cada producto.`)));
+        `${entero(total)} producto(s) encontrados. Mostrando ${entero(visibles.length)} en esta página. La barra del stock marca el mínimo de cada producto.`),
+      h('nav', { class: 'paginacion', 'aria-label': 'Paginación de productos' },
+        h('button', { class: 'btn', type: 'button', disabled: pagina <= 0, onclick: () => cambiarPagina(pagina - 1) }, 'Anterior'),
+        h('span', { class: 'suave pequeno', 'aria-live': 'polite' }, paginas ? `Página ${pagina + 1} de ${paginas}` : 'Sin páginas'),
+        h('button', { class: 'btn', type: 'button', disabled: paginas === 0 || pagina >= paginas - 1, onclick: () => cambiarPagina(pagina + 1) }, 'Siguiente')));
   }
 
   async function recargar() {
     try {
-      productos = texto ? await api.get('/api/productos/buscar', { nombre: texto }) : await api.get('/api/productos');
+      const resultado = await api.get('/api/productos/pagina', {
+        pagina, tamano: tamanoPagina, nombre: texto, filtro: filtro === 'todos' ? '' : filtro,
+      });
+      if (pagina > 0 && pagina >= resultado.totalPages) {
+        pagina = Math.max(0, resultado.totalPages - 1);
+        return recargar();
+      }
+      productos = resultado.content;
+      paginas = resultado.totalPages;
+      total = resultado.totalElements;
       pintar();
     } catch (e) {
       vaciar(zona).append(panelError(e, recargar));
     }
+  }
+
+  function cambiarPagina(nueva) {
+    pagina = nueva;
+    recargar();
   }
 
   async function cambiarActivo(p) {
@@ -110,8 +124,8 @@ export async function render(raiz, yo) {
     }
   }
 
-  buscar.addEventListener('input', debounce(() => { texto = buscar.value.trim(); recargar(); }));
-  selFiltro.addEventListener('change', () => { filtro = selFiltro.value; pintar(); });
+  buscar.addEventListener('input', debounce(() => { texto = buscar.value.trim(); pagina = 0; recargar(); }));
+  selFiltro.addEventListener('change', () => { filtro = selFiltro.value; pagina = 0; recargar(); });
   btnId.addEventListener('click', async () => {
     const id = porId.valueAsNumber;
     if (!Number.isInteger(id) || id < 1) { aviso('Escribe un ID de producto válido (número entero positivo).', 'aviso'); return; }

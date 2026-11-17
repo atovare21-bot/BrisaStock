@@ -148,6 +148,7 @@ input[type="checkbox"] { width: 1.15rem; height: 1.15rem; min-height: 1.15rem; p
 .herramientas .crece { flex: 1 1 240px; min-width: 0; }
 .herramientas input, .herramientas select { width: auto; }
 .herramientas .crece input { width: 100%; }
+.paginacion { display: flex; justify-content: center; align-items: center; gap: .75rem; padding: 1rem; }
 .pestanas { display: flex; gap: .25rem; border-bottom: 1px solid var(--linea); margin-bottom: 1.25rem; overflow-x: auto; }
 .pestanas button {
   font: inherit; font-weight: 600; background: none; border: 0; border-bottom: 3px solid transparent;
