@@ -1,5 +1,17 @@
 # BrisaStock
 
+## Reporte de ventas por día y vendedor
+
+La pantalla de reportes permite consultar ventas activas agrupadas por fecha y vendedor. El filtro `desde`/`hasta` es opcional y ambas fechas son inclusivas.
+
+La API expone `GET /api/reportes/ventas-por-dia`; las fechas usan el formato `AAAA-MM-DD`:
+
+```text
+GET /api/reportes/ventas-por-dia?desde=2026-01-01&hasta=2026-01-31
+```
+
+Cada fila incluye fecha, nombre de usuario del vendedor, cantidad de ventas y total. Las ventas canceladas se excluyen.
+
 Sistema de gestión de inventarios para microempresas (Java 21, Spring Boot 3.5, Spring Data JPA, Spring Security con HTTP Basic, MariaDB/MySQL e interfaz web HTML/CSS/JS servida por la propia aplicación).
 
 ## Requisitos

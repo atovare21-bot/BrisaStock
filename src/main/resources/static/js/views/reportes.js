@@ -1,5 +1,4 @@
-// Reportes existentes en el backend (solo ADMIN):
-//   GET /api/reportes/stock-bajo, /api/reportes/agotados, /api/reportes/vencidos
+// Reportes disponibles en el backend (solo ADMIN).
 import * as api from '../api.js';
 import { h, vaciar, tabla, medidor, dinero, entero, insigniaEstado, panelError } from '../ui.js';
 
@@ -7,18 +6,52 @@ const REPORTES = [
   { id: 'stock-bajo', titulo: 'Stock bajo', ayuda: 'Productos cuyo stock es igual o menor que su stock mínimo.' },
   { id: 'agotados', titulo: 'Agotados', ayuda: 'Productos sin unidades disponibles.' },
   { id: 'vencidos', titulo: 'Vencidos', ayuda: 'Productos marcados como vencidos.' },
+  { id: 'ventas-por-dia', titulo: 'Ventas por día y vendedor', ayuda: 'Resumen de ventas activas por fecha y usuario.' },
 ];
 
 export async function render(raiz) {
   const zona = h('div', { 'aria-live': 'polite' });
+  const rangoVentas = { desde: '', hasta: '' };
   const botones = REPORTES.map((r) => h('button', { type: 'button', role: 'tab', 'aria-selected': 'false', onclick: () => cargar(r) }, r.titulo));
   raiz.append(h('div', { class: 'pestanas', role: 'tablist' }, botones), zona);
 
   async function cargar(r) {
     botones.forEach((b, i) => b.setAttribute('aria-selected', String(REPORTES[i] === r)));
-    vaciar(zona).append(h('p', { class: 'suave' }, 'Cargando reporte…'));
+    vaciar(zona);
+    if (r.id === 'ventas-por-dia') {
+      const desde = h('input', { type: 'date', value: rangoVentas.desde, 'aria-label': 'Fecha inicial' });
+      const hasta = h('input', { type: 'date', value: rangoVentas.hasta, 'aria-label': 'Fecha final' });
+      const formulario = h('form', { class: 'herramientas', onsubmit: (ev) => {
+        ev.preventDefault();
+        rangoVentas.desde = desde.value;
+        rangoVentas.hasta = hasta.value;
+        cargar(r);
+      } },
+      h('label', { class: 'campo' }, h('span', {}, 'Desde'), desde),
+      h('label', { class: 'campo' }, h('span', {}, 'Hasta'), hasta),
+      h('button', { class: 'btn btn--primario', type: 'submit' }, 'Consultar'));
+      vaciar(zona).append(formulario);
+    }
+    zona.append(h('p', { class: 'suave' }, 'Cargando reporte…'));
     try {
-      const filas = await api.get(`/api/reportes/${r.id}`);
+      const parametros = new URLSearchParams(Object.entries(rangoVentas).filter(([, v]) => v));
+      const consulta = r.id === 'ventas-por-dia' && parametros.size
+        ? `ventas-por-dia?${parametros}`
+        : r.id;
+      const filas = await api.get(`/api/reportes/${consulta}`);
+      if (r.id === 'ventas-por-dia') {
+        vaciar(zona).append(h('section', { class: 'seccion' },
+          h('div', { class: 'seccion__cabecera' }, h('div', {},
+            h('h2', {}, `${r.titulo}: ${entero(filas.length)} grupo(s)`),
+            h('p', { class: 'suave pequeno', style: 'margin:0' }, r.ayuda))),
+          tabla([
+            { titulo: 'Fecha', celda: (v) => v.fecha },
+            { titulo: 'Vendedor', principal: true, celda: (v) => v.vendedor },
+            { titulo: 'Ventas', num: true, celda: (v) => entero(v.cantidadVentas) },
+            { titulo: 'Total', num: true, celda: (v) => dinero(v.total) },
+          ], filas, { vacioTitulo: 'Sin ventas', vacioDetalle: 'No hay ventas activas en este rango.' })));
+        return;
+      }
       vaciar(zona).append(h('section', { class: 'seccion' },
         h('div', { class: 'seccion__cabecera' }, h('div', {}, h('h2', {}, `${r.titulo}: ${entero(filas.length)} producto(s)`), h('p', { class: 'suave pequeno', style: 'margin:0' }, r.ayuda))),
         tabla([
