@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="t d">
+  <title id="t">Ilustración de referencia del panel principal</title>
+  <desc id="d">Composición orientativa del panel de BrisaStock con indicadores y lista de reposición; cifras ficticias.</desc>
+  <rect width="1280" height="720" fill="#f2f5f6"/>
+  <rect width="232" height="720" fill="#123b44"/>
+  <rect x="22" y="23" width="30" height="30" rx="7" fill="#0e7c86"/>
+  <path d="M29 45h16m-16-7h13m-13-7h16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="64" y="46" font-family="Segoe UI, Arial" font-size="21" font-weight="700" fill="#fff">BrisaStock</text>
+  <g font-family="Segoe UI, Arial" font-size="16" fill="#e4eff0">
+    <text x="28" y="110">Panel</text><text x="28" y="157">Productos</text><text x="28" y="204">Ventas</text><text x="28" y="251">Inventario</text><text x="28" y="298">Reportes</text>
+  </g>
+  <rect x="14" y="77" width="204" height="48" rx="6" fill="#1a4c57"/>
+  <rect x="232" width="1048" height="78" fill="#fff" stroke="#d5dee1"/>
+  <text x="270" y="49" font-family="Segoe UI, Arial" font-size="24" font-weight="700" fill="#15262b">Panel</text>
+  <rect x="838" y="19" width="112" height="40" rx="6" fill="#f2f5f6" stroke="#d5dee1"/>
+  <text x="894" y="44" text-anchor="middle" font-family="Segoe UI, Arial" font-size="14" fill="#15262b">Buscar · Ctrl K</text>
+  <rect x="965" y="19" width="132" height="40" rx="6" fill="#f2f5f6" stroke="#d5dee1"/>
+  <text x="1031" y="44" text-anchor="middle" font-family="Segoe UI, Arial" font-size="14" fill="#15262b">Accesibilidad</text>
+  <text x="1120" y="35" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#15262b">María Pérez</text>
+  <text x="1120" y="55" font-family="Segoe UI, Arial" font-size="12" fill="#51666c">Administradora</text>
+  <g font-family="Segoe UI, Arial" fill="#15262b">
+    <rect x="270" y="112" width="218" height="100" rx="8" fill="#fff" stroke="#d5dee1"/><text x="292" y="153" font-size="30" font-weight="700">24</text><text x="292" y="183" font-size="15" fill="#51666c">Productos registrados</text>
+    <rect x="504" y="112" width="218" height="100" rx="8" fill="#fff" stroke="#d5dee1"/><text x="526" y="153" font-size="30" font-weight="700" fill="#a8570a">3</text><text x="526" y="183" font-size="15" fill="#51666c">Con stock bajo</text>
+    <rect x="738" y="112" width="218" height="100" rx="8" fill="#fff" stroke="#d5dee1"/><text x="760" y="153" font-size="30" font-weight="700" fill="#b3261e">1</text><text x="760" y="183" font-size="15" fill="#51666c">Agotados</text>
+    <rect x="972" y="112" width="218" height="100" rx="8" fill="#fff" stroke="#d5dee1"/><text x="994" y="153" font-size="30" font-weight="700" fill="#b3261e">2</text><text x="994" y="183" font-size="15" fill="#51666c">Vencidos</text>
+  </g>
+  <rect x="270" y="238" width="444" height="390" rx="8" fill="#fff" stroke="#d5dee1"/>
+  <text x="294" y="278" font-family="Segoe UI, Arial" font-size="20" font-weight="700" fill="#15262b">Para reponer</text>
+  <text x="627" y="278" font-family="Segoe UI, Arial" font-size="14" fill="#0a626a">Ver productos</text>
+  <path d="M294 300h396" stroke="#d5dee1"/>
+  <g font-family="Segoe UI, Arial" font-size="15" fill="#15262b">
+    <text x="294" y="340">Café molido</text><text x="294" y="390">Arroz integral</text><text x="294" y="440">Jabón neutro</text>
+  </g>
+  <g fill="#dff1f2"><rect x="294" y="352" width="218" height="8" rx="4"/><rect x="294" y="402" width="218" height="8" rx="4"/><rect x="294" y="452" width="218" height="8" rx="4"/></g>
+  <g fill="#0e7c86"><rect x="294" y="352" width="55" height="8" rx="4"/><rect x="294" y="402" width="92" height="8" rx="4"/><rect x="294" y="452" width="35" height="8" rx="4"/></g>
+  <rect x="738" y="238" width="452" height="390" rx="8" fill="#fff" stroke="#d5dee1"/>
+  <text x="762" y="278" font-family="Segoe UI, Arial" font-size="20" font-weight="700" fill="#15262b">Últimas ventas</text>
+  <path d="M762 300h404" stroke="#d5dee1"/>
+  <g font-family="Segoe UI, Arial" font-size="15" fill="#15262b"><text x="762" y="342">Venta #108</text><text x="762" y="392">Venta #107</text><text x="762" y="442">Venta #106</text></g>
+  <g font-family="Segoe UI, Arial" font-size="15" fill="#1f7a45"><text x="1080" y="342">Activa</text><text x="1080" y="392">Activa</text><text x="1080" y="442">Activa</text></g>
+  <text x="270" y="680" font-family="Segoe UI, Arial" font-size="14" fill="#51666c">Ilustración de referencia · nombres y cantidades ficticios</text>
+</svg>
