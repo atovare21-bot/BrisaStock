@@ -13,6 +13,10 @@ import {
 
 export async function render(raiz, yo) {
   const admin = yo.rol === 'ADMIN';
+  let paginaHistorial = 0;
+  let paginasHistorial = 0;
+  let totalVentas = 0;
+  const tamanoPaginaHistorial = 20;
   const panelNueva = h('div', {});
   const panelHistorial = h('div', { hidden: true });
   const btnNueva = h('button', { type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Nueva venta');
@@ -38,8 +42,19 @@ export async function render(raiz, yo) {
   async function cargarHistorial() {
     vaciar(panelHistorial).append(h('p', { class: 'suave' }, 'Cargando ventas…'));
     try {
-      const ventas = (await api.get('/api/ventas')).sort((a, b) => new Date(b.fechaVenta) - new Date(a.fechaVenta));
+      const resultado = await api.get('/api/ventas/pagina', {
+        pagina: paginaHistorial, tamano: tamanoPaginaHistorial,
+      });
+      if (paginaHistorial > 0 && paginaHistorial >= resultado.totalPages) {
+        paginaHistorial = Math.max(0, resultado.totalPages - 1);
+        return cargarHistorial();
+      }
+      const ventas = resultado.content;
+      paginasHistorial = resultado.totalPages;
+      totalVentas = resultado.totalElements;
       vaciar(panelHistorial).append(h('section', { class: 'seccion' },
+        h('p', { class: 'seccion__cuerpo suave pequeno' },
+          `${entero(totalVentas)} venta(s) en el historial. Mostrando ${entero(ventas.length)} en esta página.`),
         tabla([
           { titulo: 'Venta', principal: true, celda: (v) => `#${v.id}` },
           { titulo: 'Fecha', celda: (v) => fecha(v.fechaVenta) },
@@ -55,10 +70,19 @@ export async function render(raiz, yo) {
                 : h('button', { class: 'btn btn--texto btn--peligro-texto', type: 'button', onclick: () => cancelar(v) }, 'Cancelar venta'),
             ],
           },
-        ], ventas, { vacioTitulo: 'Aún no hay ventas', vacioDetalle: 'Las ventas que registres aparecerán aquí.' })));
+        ], ventas, { vacioTitulo: 'Aún no hay ventas', vacioDetalle: 'Las ventas que registres aparecerán aquí.' }),
+        h('nav', { class: 'paginacion', 'aria-label': 'Paginación del historial de ventas' },
+          h('button', { class: 'btn', type: 'button', disabled: paginaHistorial <= 0, onclick: () => cambiarPaginaHistorial(paginaHistorial - 1) }, 'Anterior'),
+          h('span', { class: 'suave pequeno', 'aria-live': 'polite' }, paginasHistorial ? `Página ${paginaHistorial + 1} de ${paginasHistorial}` : 'Sin páginas'),
+          h('button', { class: 'btn', type: 'button', disabled: paginasHistorial === 0 || paginaHistorial >= paginasHistorial - 1, onclick: () => cambiarPaginaHistorial(paginaHistorial + 1) }, 'Siguiente')));
     } catch (e) {
       vaciar(panelHistorial).append(panelError(e, cargarHistorial));
     }
+  }
+
+  function cambiarPaginaHistorial(nueva) {
+    paginaHistorial = nueva;
+    cargarHistorial();
   }
 
   async function cancelar(v) {

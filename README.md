@@ -100,6 +100,15 @@ No suba contraseñas, respaldos de la base de datos ni la carpeta `target/`.
 - **No hay HTTPS/TLS configurado en la aplicación.** HTTP Basic envía el usuario y la contraseña en cada solicitud; úsela solo en una red local de confianza o detrás de un proxy con HTTPS.
 - No hay límite de intentos de inicio de sesión.
 
+## Paginación de listados
+
+Productos e historial de ventas tienen rutas paginadas para cargar solo los registros visibles. Ambas usan índices de página desde cero, muestran 20 registros por defecto y permiten entre 1 y 100 por petición:
+
+- `GET /api/productos/pagina?pagina=0&tamano=20`: acepta también `nombre` para buscar y `filtro` con `todos`, `bajo`, `agotado`, `vencido` o `inactivo`.
+- `GET /api/ventas/pagina?pagina=0&tamano=20`: ordena el historial desde la venta más reciente.
+
+La respuesta incluye `content`, `number`, `size`, `totalElements`, `totalPages`, `first` y `last`. Las rutas antiguas `GET /api/productos` y `GET /api/ventas` mantienen su respuesta de lista para clientes existentes.
+
 ## Calidad de datos de productos (Fase 6)
 - **Fecha de vencimiento:** la API exige `AAAA-MM-DD` con fecha real de calendario (`2026-02-30` se rechaza con 400). Vacío = sin fecha. En la base es una columna `DATE`, así que no puede guardarse un texto que no sea una fecha.
 - **Vencido:** un producto se considera vencido si tiene la marca manual `vencido` o una fecha **anterior a hoy** (campo de solo lectura `vencidoPorFecha`). Esos productos no se pueden vender (409).
