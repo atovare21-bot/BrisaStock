@@ -72,7 +72,7 @@ Las pruebas usan una base H2 en memoria (con una guardia que aborta si no es H2)
 - **No hay registro público.** Solo un `ADMIN` autenticado puede crear usuarios: desde la pantalla *Usuarios* de la interfaz o con `POST /api/usuarios` (siempre crea rol `USER`) y `POST /api/usuarios/admin` (permite elegir `ADMIN` o `USER`).
 - Roles: `ADMIN` y `USER`. Los usuarios antiguos con rol `EMPLEADO` se tratan como `USER`.
 - La aplicación no trae un administrador inicial: el primer `ADMIN` debe existir ya en la tabla `usuarios` (los usuarios actuales no se modifican).
-- No hay (todavía) pantalla para desactivar usuarios ni cambiar contraseñas.
+- Desde **Usuarios**, ADMIN puede desactivar o reactivar cuentas y restablecer contraseñas. No es posible desactivar la propia cuenta ni al último administrador activo. Las contraseñas nuevas se almacenan con BCrypt.
 
 ## Accesibilidad y búsqueda rápida
 Pensadas para que cualquier persona pueda usar la aplicación sin enredarse. No cambian datos ni permisos: son solo de presentación y viven en el navegador.

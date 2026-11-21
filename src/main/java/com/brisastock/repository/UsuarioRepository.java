@@ -15,4 +15,6 @@ public interface UsuarioRepository
 
     boolean existsByUsername(
             String username);
+
+    long countByRolAndActivoTrue(String rol);
 }

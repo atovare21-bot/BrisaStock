@@ -4,6 +4,7 @@ import com.brisastock.dto.UsuarioAdminDTO;
 import com.brisastock.dto.UsuarioRegistroDTO;
 import com.brisastock.dto.UsuarioResponseDTO;
 import com.brisastock.exception.ConflictoNegocioException;
+import com.brisastock.exception.RecursoNoEncontradoException;
 import com.brisastock.exception.SolicitudInvalidaException;
 import com.brisastock.model.Rol;
 import com.brisastock.model.Usuario;
@@ -49,6 +50,41 @@ public class UsuarioService {
         return usuarioRepository.findAll().stream()
                 .map(UsuarioResponseDTO::desde)
                 .toList();
+    }
+
+    @Transactional
+    public UsuarioResponseDTO cambiarActivo(Long id, boolean activo, String usernameActual) {
+        Usuario usuario = buscarUsuario(id);
+        if (!activo && Boolean.TRUE.equals(usuario.getActivo())) {
+            if (usuario.getUsername().equalsIgnoreCase(usernameActual)) {
+                throw new SolicitudInvalidaException("No puedes desactivar tu propio usuario");
+            }
+            if (Rol.ADMIN.name().equals(usuario.getRol())
+                    && usuarioRepository.countByRolAndActivoTrue(Rol.ADMIN.name()) <= 1) {
+                throw new ConflictoNegocioException("No se puede desactivar el último administrador activo");
+            }
+        }
+        usuario.setActivo(activo);
+        return UsuarioResponseDTO.desde(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
+    public void cambiarPassword(Long id, String passwordNueva) {
+        if (passwordNueva == null || passwordNueva.length() < 8) {
+            throw new SolicitudInvalidaException("La contraseña debe tener al menos 8 caracteres");
+        }
+        if (passwordNueva.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES_PASSWORD) {
+            throw new SolicitudInvalidaException(
+                    "La contraseña no puede superar " + MAX_BYTES_PASSWORD + " bytes");
+        }
+        Usuario usuario = buscarUsuario(id);
+        usuario.setPassword(passwordEncoder.encode(passwordNueva));
+        usuarioRepository.save(usuario);
+    }
+
+    private Usuario buscarUsuario(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
     }
 
     private UsuarioResponseDTO crear(String nombre, String username, String password,

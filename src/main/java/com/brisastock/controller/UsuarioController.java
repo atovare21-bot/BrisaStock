@@ -1,5 +1,6 @@
 package com.brisastock.controller;
 
+import com.brisastock.dto.CambiarPasswordRequestDTO;
 import com.brisastock.dto.UsuarioAdminDTO;
 import com.brisastock.dto.UsuarioRegistroDTO;
 import com.brisastock.dto.UsuarioResponseDTO;
@@ -7,6 +8,7 @@ import com.brisastock.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,5 +48,24 @@ public class UsuarioController {
     @GetMapping
     public List<UsuarioResponseDTO> listar() {
         return usuarioService.listarUsuarios();
+    }
+
+    /** Solo ADMIN: desactiva la cuenta sin eliminarla ni perder su historial. */
+    @PatchMapping("/{id}/desactivar")
+    public UsuarioResponseDTO desactivar(@PathVariable Long id, Authentication auth) {
+        return usuarioService.cambiarActivo(id, false, auth.getName());
+    }
+
+    /** Solo ADMIN: reactiva una cuenta existente. */
+    @PatchMapping("/{id}/activar")
+    public UsuarioResponseDTO activar(@PathVariable Long id, Authentication auth) {
+        return usuarioService.cambiarActivo(id, true, auth.getName());
+    }
+
+    /** Solo ADMIN: establece una nueva contraseña, que el servicio almacena con BCrypt. */
+    @PutMapping("/{id}/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cambiarPassword(@PathVariable Long id, @Valid @RequestBody CambiarPasswordRequestDTO dto) {
+        usuarioService.cambiarPassword(id, dto.password());
     }
 }
